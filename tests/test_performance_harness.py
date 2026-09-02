@@ -2,7 +2,12 @@ import time
 
 import pytest
 
-from benchmarks.performance_harness import BenchmarkRecorder, percentile, summarize_samples
+from benchmarks.performance_harness import (
+    BenchmarkRecorder,
+    _prepare_workbook_copy,
+    percentile,
+    summarize_samples,
+)
 
 
 def test_percentile_returns_expected_linear_percentile():
@@ -42,3 +47,15 @@ def test_benchmark_recorder_can_record_multiple_samples():
     report = recorder.report()
     assert report["stage"]["count"] == 2
     assert report["stage"]["p50_ms"] == pytest.approx(2.0)
+
+
+def test_prepare_workbook_copy_creates_isolated_copy(tmp_path):
+    source = tmp_path / "terminal.xlsm"
+    source.write_bytes(b"workbook fixture")
+
+    copy_path = _prepare_workbook_copy(source, tmp_path / "benchmark")
+
+    assert copy_path != source
+    assert copy_path.parent.name == "benchmark"
+    assert copy_path.suffix == ".xlsm"
+    assert copy_path.read_bytes() == source.read_bytes()
