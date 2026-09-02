@@ -105,13 +105,26 @@ def _prepare_workbook_copy(source: Path, directory: Path) -> Path:
     return destination
 
 
+def _build_tickdata_matrix(data_rows: int, columns: int) -> List[List[object]]:
+    """Build the same header-plus-data shape written by xlwings ``index=False``."""
+    header = [f"column_{column + 1}" for column in range(columns)]
+    data = [
+        [
+            (row + 1) * (column + 1)
+            for column in range(columns)
+        ]
+        for row in range(data_rows)
+    ]
+    return [header, *data]
+
+
 def _excel_benchmark(workbook_path: Path, iterations: int, rows: int, columns: int) -> Dict[str, object]:
     """Measure the real TickData write and Excel recalculation path on Windows.
 
     The supplied workbook is copied to a temporary directory first. The copy's
-    ``TickData!A1:AL{rows}`` area is overwritten with representative values,
-    Excel recalculation is triggered, and the temporary workbook is discarded.
-    The original workbook is never opened or modified by the benchmark.
+    ``TickData!A1:AL{rows + 1}`` area is overwritten with representative header
+    and data values, Excel recalculation is triggered, and the temporary
+    workbook is discarded. The original workbook is never opened or modified.
     """
     if platform.system() != "Windows":
         raise RuntimeError("Excel COM benchmark requires Windows with Microsoft Excel installed")
@@ -121,13 +134,7 @@ def _excel_benchmark(workbook_path: Path, iterations: int, rows: int, columns: i
     import xlwings as xw
 
     recorder = BenchmarkRecorder()
-    values = [
-        [
-            row * columns + column if column not in (0, 1, 2) else (row + 1) * (column + 1)
-            for column in range(columns)
-        ]
-        for row in range(rows)
-    ]
+    values = _build_tickdata_matrix(rows, columns)
 
     with tempfile.TemporaryDirectory(prefix="terminal-perf-") as temp_dir:
         benchmark_copy = _prepare_workbook_copy(workbook_path, Path(temp_dir))
@@ -139,7 +146,7 @@ def _excel_benchmark(workbook_path: Path, iterations: int, rows: int, columns: i
         try:
             workbook = app.books.open(str(benchmark_copy), update_links=False, read_only=False)
             sheet = workbook.sheets[TICKDATA_SHEET]
-            target = sheet.range("A1").resize(rows, columns)
+            target = sheet.range("A1").resize(rows + 1, columns)
 
             for _ in range(iterations):
                 with recorder.measure("excel_write_ms"):
@@ -152,7 +159,8 @@ def _excel_benchmark(workbook_path: Path, iterations: int, rows: int, columns: i
                 "benchmark_copy": str(benchmark_copy),
                 "sheet": TICKDATA_SHEET,
                 "write_columns": columns,
-                "rows": rows,
+                "data_rows": rows,
+                "write_rows_including_header": rows + 1,
                 "iterations": iterations,
                 "memory_mb": _memory_mb(),
                 "stages": recorder.report(),
