@@ -4,6 +4,7 @@ import pytest
 
 from benchmarks.performance_harness import (
     BenchmarkRecorder,
+    _build_tickdata_matrix,
     _prepare_workbook_copy,
     percentile,
     summarize_samples,
@@ -59,3 +60,13 @@ def test_prepare_workbook_copy_creates_isolated_copy(tmp_path):
     assert copy_path.parent.name == "benchmark"
     assert copy_path.suffix == ".xlsm"
     assert copy_path.read_bytes() == source.read_bytes()
+
+
+def test_build_tickdata_matrix_includes_header_and_requested_data_rows():
+    matrix = _build_tickdata_matrix(data_rows=2, columns=3)
+
+    assert len(matrix) == 3
+    assert len(matrix[0]) == 3
+    assert matrix[0] == ["column_1", "column_2", "column_3"]
+    assert matrix[1] == [1, 2, 3]
+    assert matrix[2] == [2, 4, 6]
