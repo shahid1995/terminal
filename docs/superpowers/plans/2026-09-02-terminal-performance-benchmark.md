@@ -1,6 +1,6 @@
 # Terminal Performance Benchmark Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Establish a repeatable, non-invasive baseline for the NIFTY Excel terminal before changing its live data-processing architecture.
 
@@ -43,14 +43,18 @@
 
 **Files:**
 - Modify: `benchmarks/performance_harness.py`
+- Test: `tests/test_performance_harness.py`
 
 **Interfaces:**
 - CLI: `python -m benchmarks.performance_harness --workbook <path> [--iterations N] [--rows N] [--columns N] [--output <path>]`
 - JSON output containing workbook, iteration shape, memory, and stage percentile summaries.
 
+- [x] Implement an isolated temporary workbook copy so the user's original is never opened or modified by the benchmark.
+- [x] Target the real `TickData!A:AL` write path, including the header row produced by `xlwings(...).value` with `index=False`.
+- [x] Measure Excel write latency and full workbook calculation latency separately.
+- [x] Record P50/P95/P99 and memory observations.
+- [x] Disable workbook macros and external-link updates during the benchmark.
 - [ ] Run on a Windows machine with Microsoft Excel and the uploaded workbook copy.
-- [ ] Measure Excel write latency and full workbook calculation latency.
-- [ ] Record P50/P95/P99 and memory observations.
 
 ### Task 3: Baseline comparison
 
@@ -63,7 +67,7 @@
 
 ### Task 4: Verification gate
 
-- [ ] Confirm the production script has no source changes in the benchmark branch.
-- [ ] Run all available tests.
+- [x] Confirm the production script has no source changes in the benchmark branch.
+- [ ] Run all available tests on the benchmark branch.
 - [ ] Review benchmark output for plausible sample counts and outliers.
 - [ ] Do not claim performance improvement until V1 and V2 are measured under equivalent conditions.
