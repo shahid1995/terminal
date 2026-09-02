@@ -134,6 +134,7 @@ def _excel_benchmark(workbook_path: Path, iterations: int, rows: int, columns: i
         app = xw.App(visible=False, add_book=False)
         app.display_alerts = False
         app.screen_updating = False
+        app.api.AutomationSecurity = 3  # msoAutomationSecurityForceDisable
         workbook = None
         try:
             workbook = app.books.open(str(benchmark_copy), update_links=False, read_only=False)
